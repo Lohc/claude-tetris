@@ -63,7 +63,8 @@ jobs:
                - needs-info: solo si falta información para diagnosticar
                Aplica con `gh issue edit ${{ github.event.issue.number }} --add-label ... --remove-label ...`.
                Quita los labels del set gestionado que ya no apliquen. No toques labels fuera de este set. No crees labels nuevos.
-            4. Escribe el diagnóstico en el archivo `triage-comment.md` (en español, Markdown). La PRIMERA línea debe ser exactamente `<!-- claude-triage -->`. Secciones:
+            4. Escribe el diagnóstico en el archivo `triage-comment.md` (en español). La PRIMERA línea debe ser exactamente `<!-- claude-triage -->`.
+               Formato: GitHub Flavored Markdown válido para que GitHub lo renderice bien. Usa encabezados `##` para cada sección, listas con `-`, `código inline` con backticks, bloques de código con triple backtick e indicador de lenguaje (p. ej. ```js) y tablas GFM si ayudan. Deja una línea en blanco antes y después de encabezados, listas y bloques de código. No uses HTML salvo el marcador inicial. Secciones:
                - **Resumen**: qué se reporta o pide.
                - **Clasificación**: labels elegidos y justificación breve.
                - **Análisis técnico**: archivos y funciones implicados (formato `game.js:NN`), causa probable, invariantes afectados (p. ej. `collide`, `tryRotate`, `lockPiece` → `merge` → `clearLines` → `spawn`).
