@@ -32,6 +32,8 @@ const canvas = document.getElementById('board');
 const ctx = canvas.getContext('2d');
 const nextCanvas = document.getElementById('next-canvas');
 const nextCtx = nextCanvas.getContext('2d');
+const holdCanvas = document.getElementById('hold-canvas');
+const holdCtx = holdCanvas.getContext('2d');
 const scoreEl = document.getElementById('score');
 const linesEl = document.getElementById('lines');
 const levelEl = document.getElementById('level');
@@ -43,14 +45,17 @@ const themeBtn = document.getElementById('theme-toggle');
 const THEME_KEY = 'tetris-theme';
 let gridColor = '#22222e';
 
-let board, current, next, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
+let board, current, next, holdType, holdUsed, score, lines, level, paused, gameOver, lastTime, dropAccum, dropInterval, animId;
 
 function createBoard() {
   return Array.from({ length: ROWS }, () => new Array(COLS).fill(0));
 }
 
 function randomPiece() {
-  const type = Math.floor(Math.random() * 7) + 1;
+  return createPiece(Math.floor(Math.random() * 7) + 1);
+}
+
+function createPiece(type) {
   const shape = PIECES[type].map(row => [...row]);
   return { type, shape, x: Math.floor(COLS / 2) - Math.floor(shape[0].length / 2), y: 0 };
 }
@@ -144,13 +149,30 @@ function lockPiece() {
   spawn();
 }
 
-function spawn() {
-  current = next;
-  next = randomPiece();
+// piece: pieza que entra desde el hold; si se omite, se toma `next`.
+function spawn(piece) {
+  if (piece) {
+    current = piece;
+  } else {
+    current = next;
+    next = randomPiece();
+  }
+  holdUsed = false;
   if (collide(current.shape, current.x, current.y)) {
     endGame();
   }
   drawNext();
+  drawHold();
+}
+
+// Guarda la pieza actual en el hold (o la intercambia). Una vez por pieza.
+function holdPiece() {
+  if (holdUsed) return;
+  const prev = holdType;
+  holdType = current.type;
+  spawn(prev ? createPiece(prev) : undefined);
+  holdUsed = true;
+  drawHold();
 }
 
 function updateHUD() {
@@ -210,15 +232,23 @@ function draw() {
       drawBlock(ctx, current.x + c, current.y + r, current.shape[r][c], BLOCK);
 }
 
-function drawNext() {
+function drawPreview(context, shape, alpha) {
   const NB = 30;
-  nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
-  const shape = next.shape;
+  context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+  if (!shape) return;
   const offX = Math.floor((4 - shape[0].length) / 2);
   const offY = Math.floor((4 - shape.length) / 2);
   for (let r = 0; r < shape.length; r++)
     for (let c = 0; c < shape[r].length; c++)
-      drawBlock(nextCtx, offX + c, offY + r, shape[r][c], NB);
+      drawBlock(context, offX + c, offY + r, shape[r][c], NB, alpha);
+}
+
+function drawNext() {
+  drawPreview(nextCtx, next.shape);
+}
+
+function drawHold() {
+  drawPreview(holdCtx, holdType && PIECES[holdType], holdUsed ? 0.3 : 1);
 }
 
 function endGame() {
@@ -269,6 +299,7 @@ function init() {
   gameOver = false;
   dropInterval = 1000;
   dropAccum = 0;
+  holdType = null;
   lastTime = performance.now();
   next = randomPiece();
   spawn();
@@ -294,6 +325,11 @@ document.addEventListener('keydown', e => {
     case 'ArrowUp':
     case 'KeyX':
       tryRotate();
+      break;
+    case 'KeyC':
+    case 'ShiftLeft':
+    case 'ShiftRight':
+      holdPiece();
       break;
     case 'Space':
       e.preventDefault();
