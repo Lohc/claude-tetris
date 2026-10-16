@@ -43,6 +43,7 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Skins visuales** (Retro, Neon, Pastel, Pixel art) seleccionables al vuelo; la preferencia se guarda en `localStorage`.
 
 ---
 
@@ -119,6 +120,7 @@ Contiene toda la lógica del juego. A grandes rasgos:
 - **Puntuación**: usa la tabla clásica `[0, 100, 300, 500, 800]` multiplicada por el nivel actual; el hard drop suma 2 puntos por celda recorrida y el soft drop 1 punto por fila.
 - **Nivel y velocidad**: el nivel sube cada 10 líneas; la velocidad de caída se calcula como `max(100, 1000 − (level − 1) × 90)` milisegundos.
 - **Ghost piece** (`ghostY`): proyecta la posición final de la pieza actual hacia abajo y la dibuja con `globalAlpha = 0.2`.
+- **Skins** (`SKINS`, `applySkin`): cada skin define su paleta (`colors`, índices 1–7), un fondo opcional (`boardBg`), un color de rejilla opcional (`grid`) y su propia función `drawBlock`. `drawBlock()` aplica la transparencia y delega en la skin activa, así que tablero, ghost, NEXT y HOLD cambian a la vez sin recargar. Neon usa `shadowBlur` para el brillo, Pastel bordes redondeados con `arcTo` y Pixel art un bisel y una textura de puntos.
 
 ### Flujo del juego
 
@@ -175,9 +177,11 @@ Algunos parámetros fáciles de tunear en `game.js`:
 | `COLS`         | Columnas del tablero                     | `10`                  |
 | `ROWS`         | Filas del tablero                        | `20`                  |
 | `BLOCK`        | Tamaño en píxeles de cada celda          | `30`                  |
-| `COLORS`       | Paleta de colores por tipo de pieza      | 7 colores             |
+| `SKINS`        | Skins: paleta, fondo, rejilla y dibujo   | `retro`               |
 | `LINE_SCORES`  | Puntos por 1, 2, 3 o 4 líneas eliminadas | `[0,100,300,500,800]` |
 | `dropInterval` | Velocidad inicial de caída en ms         | `1000`                |
+
+La skin se elige con el selector **SKIN** del panel derecho y se guarda en `localStorage` (`tetris-skin`). Para añadir una skin nueva basta con agregar una entrada a `SKINS` con `name`, `colors` (`[null, …7 colores]`), `boardBg`, `grid` y `drawBlock(context, px, py, size, color)`.
 
 > Si cambias `COLS`, `ROWS` o `BLOCK`, recuerda ajustar también `width` y `height` del `<canvas id="board">` en `index.html` para que coincida (`COLS × BLOCK` × `ROWS × BLOCK`).
 
