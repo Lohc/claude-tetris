@@ -18,17 +18,19 @@ La verificación es manual en el navegador.
 
 ## Arquitectura
 
-- `index.html`: canvas `#board` (300×600), canvas `#next-canvas`, HUD (`#score`, `#lines`, `#level`) y un único `#overlay` reutilizado para INICIO, PAUSA y GAME OVER (alternado con la clase `hidden`; `showOverlay(mode)` muestra/oculta sus secciones: formulario de récord, tabla de records, botones).
+- `index.html`: canvas `#board` (300×600), canvas `#next-canvas`, HUD (`#score`, `#lines`, `#level`) y un único `#overlay` reutilizado para INICIO, PAUSA y GAME OVER (alternado con la clase `hidden`). `showOverlay(mode)` muestra/oculta sus secciones (formulario de récord, tabla de records, botones) y en `'pausa'` añade la clase `is-paused`, que muestra `#pause-menu` (Reanudar, Reiniciar, Ver controles, `<select id="start-level">`) y oculta `#restart-btn`.
 - `game.js`: toda la lógica, script clásico con `'use strict'` (no módulo). Estado global mutable en una sola línea `let board, current, next, score, ...`; `init()` lo reinicia todo y también es el handler del botón de reinicio.
 - `style.css`: tema oscuro; solo presentación.
 
 Invariantes clave en `game.js`:
 
-- `board` es `ROWS × COLS`; cada celda es `0` o un índice de color 1–7. Ese mismo índice indexa `COLORS` y es el valor dentro de las matrices de `PIECES` (`PIECES[0]`/`COLORS[0]` son `null`).
+- `board` es `ROWS × COLS`; cada celda es `0` o un índice de color 1–7. Ese mismo índice indexa `skin.colors` (paleta de la skin activa) y es el valor dentro de las matrices de `PIECES` (`PIECES[0]`/`colors[0]` son `null`).
 - Toda validación de posición pasa por `collide(shape, ox, oy)`; movimiento, rotación (`tryRotate` con kicks ±1/±2), ghost y drops la reutilizan.
 - Fijar pieza siempre va por `lockPiece()` → `merge()` → `clearLines()` → `spawn()`. `spawn()` detecta game over si la nueva pieza colisiona al aparecer.
-- Nivel y velocidad se recalculan solo en `clearLines()`: `level = floor(lines/10)+1`, `dropInterval = max(100, 1000 − (level−1)·90)`.
+- Nivel y velocidad: `init()` copia `startLevel` (1–10, persistido en `localStorage` `tetris-start-level`) a `gameStartLevel` y arranca con `level = gameStartLevel`; después solo se recalculan en `clearLines()`: `level = max(gameStartLevel, floor(lines/10)+1)`, `dropInterval = speedFor(level) = max(100, 1000 − (level−1)·90)`.
 - El loop (`requestAnimationFrame`) guarda el id en `animId`; pausa y game over lo cancelan, reanudar reinicia `lastTime` para evitar un salto de `dt`.
 - Al cargar la página NO se llama a `init()`: `showStart()` muestra la pantalla de inicio y la partida arranca con el botón Jugar. El keydown ignora teclas mientras `started` es `false` o el foco está en un `<input>`.
 - Records en `localStorage` (`tetris-records`: `{ top[≤5], bestCombo, maxLines }`), siempre vía `loadRecords()`/`saveRecords()` (try/catch + validación). `clearLines()` actualiza `combo`/`maxCombo`; `endGame()` guarda combo y líneas máximas. Los nombres se pintan con `textContent`, nunca `innerHTML`.
+- Pausa: `P`/`Escape` llaman a `togglePause()` (ignorando `e.repeat`). Con el menú abierto las teclas de juego no se procesan. `closeMenu()` (al reanudar y en `init()`) quita el foco del menú y copia `heldKeys` a `blockedKeys`: esas teclas se ignoran hasta su `keyup`.
+- Skins: `SKINS` (`retro`, `neon`, `pastel`, `pixel`) con `name`, `colors`, `boardBg` (null = fondo CSS), `grid` (null = `--grid` del tema) y `drawBlock(context, px, py, size, color)`. El `drawBlock()` global aplica alpha con `save()/restore()` y delega en `skin`; `draw()`/`drawPreview()` pintan `boardBg` vía `fillSkinBg()`. `applySkin()` redibuja tablero, NEXT y HOLD (también en pausa) y se persiste en `localStorage` (`tetris-skin`, fallback `retro`).
 - Cambiar `COLS`/`ROWS`/`BLOCK` exige ajustar `width`/`height` del `<canvas id="board">` en `index.html`.
