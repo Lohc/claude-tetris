@@ -144,7 +144,8 @@ kbd {
 }
 
 /* ---- Selector de tema ---- */
-#theme-toggle {
+#theme-toggle,
+#skin-select {
   background: var(--surface);
   color: var(--text);
   border: 1px solid var(--border);
@@ -156,8 +157,15 @@ kbd {
   letter-spacing: 1px;
 }
 
-#theme-toggle:hover {
+#theme-toggle:hover,
+#skin-select:hover,
+#skin-select:focus-visible {
   border-color: var(--accent);
+}
+
+#skin-select {
+  font-family: inherit;
+  width: 100%;
 }
 
 /* ---- Overlay ---- */

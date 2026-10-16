@@ -24,9 +24,10 @@ La verificación es manual en el navegador.
 
 Invariantes clave en `game.js`:
 
-- `board` es `ROWS × COLS`; cada celda es `0` o un índice de color 1–7. Ese mismo índice indexa `COLORS` y es el valor dentro de las matrices de `PIECES` (`PIECES[0]`/`COLORS[0]` son `null`).
+- `board` es `ROWS × COLS`; cada celda es `0` o un índice de color 1–7. Ese mismo índice indexa `skin.colors` (paleta de la skin activa) y es el valor dentro de las matrices de `PIECES` (`PIECES[0]`/`colors[0]` son `null`).
 - Toda validación de posición pasa por `collide(shape, ox, oy)`; movimiento, rotación (`tryRotate` con kicks ±1/±2), ghost y drops la reutilizan.
 - Fijar pieza siempre va por `lockPiece()` → `merge()` → `clearLines()` → `spawn()`. `spawn()` detecta game over si la nueva pieza colisiona al aparecer.
 - Nivel y velocidad se recalculan solo en `clearLines()`: `level = floor(lines/10)+1`, `dropInterval = max(100, 1000 − (level−1)·90)`.
 - El loop (`requestAnimationFrame`) guarda el id en `animId`; pausa y game over lo cancelan, reanudar reinicia `lastTime` para evitar un salto de `dt`.
+- Skins: `SKINS` (`retro`, `neon`, `pastel`, `pixel`) con `name`, `colors`, `boardBg` (null = fondo CSS), `grid` (null = `--grid` del tema) y `drawBlock(context, px, py, size, color)`. El `drawBlock()` global aplica alpha con `save()/restore()` y delega en `skin`; `draw()`/`drawPreview()` pintan `boardBg` vía `fillSkinBg()`. `applySkin()` redibuja tablero, NEXT y HOLD (también en pausa) y se persiste en `localStorage` (`tetris-skin`, fallback `retro`).
 - Cambiar `COLS`/`ROWS`/`BLOCK` exige ajustar `width`/`height` del `<canvas id="board">` en `index.html`.
