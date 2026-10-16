@@ -18,7 +18,7 @@ La verificación es manual en el navegador.
 
 ## Arquitectura
 
-- `index.html`: canvas `#board` (300×600), canvas `#next-canvas`, HUD (`#score`, `#lines`, `#level`) y un único `#overlay` reutilizado para PAUSA y GAME OVER (alternado con la clase `hidden`).
+- `index.html`: canvas `#board` (300×600), canvas `#next-canvas`, HUD (`#score`, `#lines`, `#level`) y un único `#overlay` reutilizado para INICIO, PAUSA y GAME OVER (alternado con la clase `hidden`; `showOverlay(mode)` muestra/oculta sus secciones: formulario de récord, tabla de records, botones).
 - `game.js`: toda la lógica, script clásico con `'use strict'` (no módulo). Estado global mutable en una sola línea `let board, current, next, score, ...`; `init()` lo reinicia todo y también es el handler del botón de reinicio.
 - `style.css`: tema oscuro; solo presentación.
 
@@ -29,4 +29,6 @@ Invariantes clave en `game.js`:
 - Fijar pieza siempre va por `lockPiece()` → `merge()` → `clearLines()` → `spawn()`. `spawn()` detecta game over si la nueva pieza colisiona al aparecer.
 - Nivel y velocidad se recalculan solo en `clearLines()`: `level = floor(lines/10)+1`, `dropInterval = max(100, 1000 − (level−1)·90)`.
 - El loop (`requestAnimationFrame`) guarda el id en `animId`; pausa y game over lo cancelan, reanudar reinicia `lastTime` para evitar un salto de `dt`.
+- Al cargar la página NO se llama a `init()`: `showStart()` muestra la pantalla de inicio y la partida arranca con el botón Jugar. El keydown ignora teclas mientras `started` es `false` o el foco está en un `<input>`.
+- Records en `localStorage` (`tetris-records`: `{ top[≤5], bestCombo, maxLines }`), siempre vía `loadRecords()`/`saveRecords()` (try/catch + validación). `clearLines()` actualiza `combo`/`maxCombo`; `endGame()` guarda combo y líneas máximas. Los nombres se pintan con `textContent`, nunca `innerHTML`.
 - Cambiar `COLS`/`ROWS`/`BLOCK` exige ajustar `width`/`height` del `<canvas id="board">` en `index.html`.

@@ -43,6 +43,8 @@ Es una versión jugable del Tetris clásico con todas las mecánicas que esperar
 - **Sistema de puntuación** clásico de Tetris (100 / 300 / 500 / 800 multiplicado por nivel).
 - **Niveles** que aumentan cada 10 líneas y aceleran la caída.
 - **Pausa** y **Game Over** con opción de reinicio.
+- **Pantalla de inicio** con la tabla de records; la partida empieza al pulsar **Jugar**.
+- **Tabla de records local** (`localStorage`): Top 5 con nombre del jugador, que se introduce al terminar la partida si la puntuación entra en el top (la nueva entrada se resalta). Guarda también el **mejor combo** y las **líneas máximas** conseguidas, y permite **borrar los records**.
 
 ---
 
@@ -100,7 +102,7 @@ Define la estructura visual:
 
 - Un `<canvas id="board">` de **300 × 600** píxeles donde se renderiza el tablero.
 - Un panel lateral con `SCORE`, `LINES`, `LEVEL`, vista de la siguiente pieza y la lista de controles.
-- Un overlay para los estados **PAUSA** y **GAME OVER**.
+- Un único overlay para los estados **INICIO**, **PAUSA** y **GAME OVER**, con la tabla de records, el formulario de nombre y el botón para borrar records.
 
 ### 2. `style.css`
 
@@ -119,10 +121,15 @@ Contiene toda la lógica del juego. A grandes rasgos:
 - **Puntuación**: usa la tabla clásica `[0, 100, 300, 500, 800]` multiplicada por el nivel actual; el hard drop suma 2 puntos por celda recorrida y el soft drop 1 punto por fila.
 - **Nivel y velocidad**: el nivel sube cada 10 líneas; la velocidad de caída se calcula como `max(100, 1000 − (level − 1) × 90)` milisegundos.
 - **Ghost piece** (`ghostY`): proyecta la posición final de la pieza actual hacia abajo y la dibuja con `globalAlpha = 0.2`.
+- **Combo**: número de piezas consecutivas que limpian al menos una línea; se reinicia a 0 cuando una pieza se fija sin limpiar ninguna.
+- **Records** (`loadRecords` / `saveRecords`): se guardan en `localStorage` bajo la clave `tetris-records` como `{ top, bestCombo, maxLines }`. Los datos se validan al leerlos (si están corruptos se usan valores por defecto) y los nombres se pintan con `textContent` para evitar inyección de HTML.
 
 ### Flujo del juego
 
 ```
+carga de la página
+  └─ showStart()                    → overlay de inicio con records (botón Jugar)
+        ↓  clic en Jugar
 init()
   ├─ createBoard()                  → matriz vacía
   ├─ next = randomPiece()
@@ -138,7 +145,7 @@ init()
    keydown → mover / rotar / soft-drop / hard-drop / pausa
 ```
 
-Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()` y se muestra el overlay de **Game Over**.
+Cuando una pieza recién generada ya colisiona al aparecer (`spawn`), se dispara `endGame()`: actualiza el mejor combo y las líneas máximas, y muestra el overlay de **Game Over**. Si la puntuación entra en el Top 5 aparece el campo de nombre (Enter o **Guardar**); al guardar, la tabla se vuelve a pintar con la nueva entrada resaltada.
 
 ---
 
